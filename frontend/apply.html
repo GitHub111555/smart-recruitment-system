@@ -1,0 +1,123 @@
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Submit Job Application</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #000; padding: 20px; }
+    body.dark { background-color: #121212; color: #fff; }
+    .dark-toggle { position: absolute; top: 20px; right: 20px; }
+    .container { max-width: 600px; margin: 100px auto 0; }
+    form { display: flex; flex-direction: column; }
+    label { margin: 10px 0 5px; }
+    input, textarea { padding: 10px; font-size: 16px; }
+    button { margin-top: 20px; padding: 12px; font-size: 16px; background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background-color: #0056b3; }
+    #resultMsg { margin-top: 20px; font-weight: bold; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="dark-toggle">
+    <label><input type="checkbox" id="darkModeToggle" /> Dark Mode</label>
+  </div>
+
+  <div class="container">
+    <h2 id="pageTitle">Submit Job Application</h2>
+
+    <form id="applicationForm" enctype="multipart/form-data">
+      <input type="hidden" id="jobIdField" name="jobId" />
+
+      <label>Name:</label>
+      <input type="text" id="applicant_name" name="applicant_name" required>
+
+      <label>Skills:</label>
+      <input type="text" id="skills" name="skills" required>
+
+      <label>Experience (Years):</label>
+      <input type="number" id="experience" name="experience" required>
+
+      <label>Email:</label>
+      <input type="email" id="email" name="email" required>
+
+      <label>Phone:</label>
+      <input type="text" id="phone" name="phone" required>
+
+      <label>Upload Resume:</label>
+      <input type="file" id="resume" name="resume">
+
+      <label>Support Request (Optional):</label>
+      <textarea id="supportRequest" name="support_needs" rows="3"></textarea>
+
+      <label><input type="checkbox" id="subscribe" name="subscribe" /> Subscribe to Job Alerts</label>
+      <label><input type="checkbox" id="notify" name="notify" /> Enable Notifications</label>
+
+      <button type="submit">Submit</button>
+    </form>
+
+    <p id="resultMsg"></p>
+  </div>
+
+  <script>
+    const form = document.getElementById("applicationForm");
+    const resultMsg = document.getElementById("resultMsg");
+    const toggle = document.getElementById("darkModeToggle");
+
+    // Dark mode persistence
+    if (localStorage.getItem("darkMode") === "enabled") {
+      document.body.classList.add("dark");
+      toggle.checked = true;
+    }
+    toggle.addEventListener("change", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark") ? "enabled" : "disabled");
+    });
+
+    // Ensure user is logged in
+    const token = localStorage.getItem("token");
+    if (!token) {
+      resultMsg.innerText = "❌ You must be logged in first.";
+      form.style.display = "none";
+    }
+
+    // Handle jobId from URL
+    const params = new URLSearchParams(window.location.search);
+    const jobId = params.get("jobId");
+    if (jobId) {
+      document.getElementById("pageTitle").textContent += ` - Job #${jobId}`;
+      document.getElementById("jobIdField").value = jobId;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      // Debug: print all form entries
+      console.log('📝 FormData entries:', Array.from(formData.entries()));
+
+      const name = formData.get("applicant_name");
+
+      try {
+        const res = await fetch("http://localhost:50051/apply", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token },
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resultMsg.innerText = `✅ Thank you ${name}, your application has been received.`;
+          setTimeout(() => {
+            window.location.href = `status.html?applicant_name=${encodeURIComponent(name)}`;
+          }, 1500);
+        } else {
+          resultMsg.innerText = `❌ Error: ${data.message}`;
+        }
+      } catch (err) {
+        console.error(err);
+        resultMsg.innerText = "❌ Network error.";
+      }
+    });
+  </script>
+</body>
+</html>

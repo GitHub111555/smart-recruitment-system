@@ -1,0 +1,234 @@
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin: 100px auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .form-group button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    .form-group button:hover {
+      background-color: #0056b3;
+    }
+
+    .form-group p {
+      text-align: center;
+    }
+
+    .form-group p a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .form-group p a:hover {
+      text-decoration: underline;
+    }
+
+    .form-group .forgot-password,
+    .form-group .admin-link {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .alert {
+      display: none;
+      padding: 10px;
+      margin-top: 15px;
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: white;
+    }
+
+    .container.dark-mode {
+      background-color: #333;
+    }
+
+    .form-group button.dark-mode {
+      background-color: #007bff;
+    }
+
+    .form-group button.dark-mode:hover {
+      background-color: #0056b3;
+    }
+
+    .form-group p a.dark-mode {
+      color: #4CAF50;
+    }
+
+    .form-group p a.dark-mode:hover {
+      color: #80e27e;
+    }
+
+    #darkModeToggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background-color: #007bff;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #darkModeToggle:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="darkModeToggle">Toggle Dark Mode</button>
+
+  <div class="container">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required>
+      </div>
+      <div class="form-group">
+        <button type="submit">Login</button>
+      </div>
+      <div class="form-group">
+        <p>Don't have an account? <a href="/register">Create a new account</a></p>
+      </div>
+      <div class="form-group forgot-password">
+        <p>Forgot your password? <a href="/forgot-password">Reset it here</a></p>
+      </div>
+     
+    </form>
+
+    <div class="alert" id="successAlert">✅ Login successful!</div>
+  </div>
+
+  <script>
+    const loginForm = document.getElementById("loginForm");
+    const alertBox = document.getElementById("successAlert");
+
+    loginForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        const res = await fetch("http://localhost:3000/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          localStorage.setItem("token", data.token);
+          alertBox.style.display = "block";
+
+          setTimeout(() => {
+            const isAdmin = username.toLowerCase() === "admin";
+            const pendingJobId = localStorage.getItem("pendingJobId");
+
+            if (isAdmin) {
+              window.location.href = "admin.html";
+            } else if (pendingJobId) {
+              localStorage.removeItem("pendingJobId");
+              window.location.href = `apply.html?jobId=${pendingJobId}`;
+            } else {
+              window.location.href = "home.html#jobs";
+            }
+          }, 1000);
+        } else {
+          alertBox.style.display = "block";
+          alertBox.textContent = "❌ Invalid credentials.";
+          alertBox.style.backgroundColor = "#dc3545"; // red
+        }
+      } catch (error) {
+        console.error(error);
+        alertBox.style.display = "block";
+        alertBox.textContent = "❌ Network error.";
+        alertBox.style.backgroundColor = "#dc3545";
+      }
+    });
+
+    // Dark Mode Toggle
+    const toggle = document.getElementById("darkModeToggle");
+    if (localStorage.getItem("darkMode") === "enabled") {
+      document.body.classList.add("dark-mode");
+      document.querySelector(".container").classList.add("dark-mode");
+    }
+    toggle.addEventListener("click", () => {
+      document.body.classList.toggle("dark-mode");
+      document.querySelector(".container").classList.toggle("dark-mode");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode") ? "enabled" : "disabled");
+    });
+
+    // Store jobId if login page accessed via URL param (e.g. login.html?jobId=2)
+    const urlParams = new URLSearchParams(window.location.search);
+    const jobId = urlParams.get("jobId");
+    if (jobId) {
+      localStorage.setItem("pendingJobId", jobId);
+    }
+  </script>
+</body>
+</html>

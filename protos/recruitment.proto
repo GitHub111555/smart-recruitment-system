@@ -1,0 +1,137 @@
+ 
+syntax = "proto3";
+package recruitment;
+
+import "google/protobuf/empty.proto";
+
+// —— Services ——
+
+// 1️⃣ Job Application Service
+service JobApplicationService {
+  rpc SubmitApplication       (JobApplicationRequest)        returns (JobApplicationResponse);
+  rpc GetApplicationStatus    (ApplicationStatusRequest)     returns (ApplicationStatusResponse);
+  rpc WithdrawApplication     (ApplicationCancelRequest)     returns (ApplicationCancelResponse);
+  rpc GetApplicationUpdates   (ApplicationStatusRequest)     returns (stream ApplicationStatusResponse);
+
+  // New:
+  rpc GetAllApplications      (google.protobuf.Empty)        returns (ApplicationListResponse);
+  rpc UpdateApplicationStatus (UpdateStatusRequest)          returns (UpdateStatusResponse);
+}
+
+// 2️⃣ Interview Scheduling Service
+service InterviewService {
+  rpc ScheduleInterview       (InterviewRequest)             returns (InterviewResponse);
+  rpc StreamInterviewUpdates  (stream InterviewUpdateRequest) returns (stream InterviewUpdateResponse);
+}
+
+// 3️⃣ AI Applicant Filtering Service
+service AIApplicantFilteringService {
+  rpc FilterApplicant         (FilterRequest)                returns (FilterResponse);
+  rpc BulkFilterApplicants    (stream FilterRequest)         returns (BulkFilterResponse);
+}
+
+// —— Messages ——
+
+// Application-related
+message JobApplicationRequest {
+  string applicant_name   = 1;
+  string skills           = 2;
+  string experience       = 3;
+  string email            = 4;
+  string phone            = 5;
+  string support_needs    = 6;
+  string resume_filename  = 7;
+  bool   subscribe        = 8;
+  bool   notify           = 9;
+  string jobId            = 10;
+}
+
+message JobApplicationResponse {
+  string applicant_name = 1;
+  string status         = 2;
+  string message        = 3;
+}
+
+message ApplicationStatusRequest {
+  string applicant_name = 1;
+}
+
+message ApplicationStatusResponse {
+  string applicant_name = 1;
+  string status         = 2;
+}
+
+message ApplicationCancelRequest {
+  string applicant_name = 1;
+}
+
+message ApplicationCancelResponse {
+  string status  = 1;
+  string message = 2;
+}
+
+// List all
+message ApplicationListResponse {
+  repeated ApplicationEntry applications = 1;
+}
+
+message ApplicationEntry {
+  string applicant_name         = 1;
+  string skills                 = 2;
+  string experience             = 3;
+  string email                  = 4;
+  string phone                  = 5;
+  string support_needs          = 6;
+  string resume_filename        = 7;
+  bool   subscribe              = 8;
+  bool   notify                 = 9;
+  string jobId                  = 10;
+  string status                 = 11;
+  string scheduledInterviewTime = 12;
+}
+
+// Status update
+message UpdateStatusRequest {
+  string applicant_name = 1;
+  string status         = 2;
+}
+
+message UpdateStatusResponse {
+  string message                 = 1;
+  string scheduledInterviewTime  = 2;
+}
+
+// Interview-related
+message InterviewRequest {
+  string applicant_name = 1;
+  string position       = 2;
+  string datetime       = 3;
+}
+
+message InterviewResponse {
+  string confirmation = 1;
+}
+
+message InterviewUpdateRequest {
+  string applicant_name = 1;
+}
+
+message InterviewUpdateResponse {
+  string update_message = 1;
+}
+
+// AI filter
+message FilterRequest {
+  string name   = 1;
+  string resume = 2;
+  string skills = 3;
+}
+
+message FilterResponse {
+  string status        = 1;
+  string recommendation = 2;
+}
+
+message BulkFilterResponse {
+  repeated FilterResponse responses = 1;
+}

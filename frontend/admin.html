@@ -1,0 +1,261 @@
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard - Smart Recruitment</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #000; transition: background-color .3s, color .3s; padding: 20px; }
+    body.dark { background-color: #121212; color: #fff; }
+    .dark-toggle { position: absolute; top: 20px; right: 20px; }
+    .btn-back { padding: 10px 20px; background: #000; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-back:hover { background: #ffbc00; color: #000; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ccc; }
+    th { background: #007bff; color: #fff; }
+    body.dark th { background: #0056b3; }
+    .popup {
+      position: relative;
+      background: #eee; border: 1px solid #ccc; padding: 20px; display: none; margin-top: 20px; max-width: 600px;
+    }
+    body.dark .popup { background: #333; border-color: #555; color: #fff; }
+    .popup input, .popup textarea, .popup button, .popup p span {
+      margin-top: 10px; width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;
+    }
+    .popup button { width: auto; margin-right: 10px; border: none; background: #007bff; color: #fff; cursor: pointer; }
+    .popup button:hover { background: #0056b3; }
+    .popup .close-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: transparent; border: none; font-size: 1.5rem; cursor: pointer;
+    }
+    .stats, .filter-bar { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+    .stats span { background: #007bff; color: #fff; padding: 5px 15px; border-radius: 20px; }
+    input[type=search], select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <!-- Dark Mode Toggle -->
+  <div class="dark-toggle">
+    <label><input type="checkbox" id="darkModeToggle" /> Dark Mode</label>
+  </div>
+
+  <!-- Navigation -->
+  <div style="margin-bottom:20px;">
+    <a href="home.html" class="btn-back">← Back to Home</a>
+    <button onclick="logout()" class="btn-back" style="background: crimson; margin-left: 10px;">Logout</button>
+  </div>
+
+  <h2>📊 Admin Dashboard - Applications</h2>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <input type="search" id="searchBox" placeholder="Search by name…" />
+    <select id="statusFilter">
+      <option value="">All Status</option>
+      <option value="Received">Received</option>
+      <option value="Accepted">Accepted</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats" id="stats"></div>
+
+  <!-- Applications Table -->
+  <table id="applicationsTable">
+    <thead>
+      <tr><th>Name</th><th>Status</th><th>Action</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Details Popup -->
+  <div id="detailsPopup" class="popup">
+    <!-- Close button -->
+    <button class="close-btn" onclick="closeDetails()">✕</button>
+
+    <h3>📄 Application Details</h3>
+    <p><strong>Name:</strong> <span id="detailName"></span></p>
+    <p><strong>Email:</strong> <span id="detailEmail"></span></p>
+    <p><strong>Phone:</strong> <span id="detailPhone"></span></p>
+    <p><strong>Resume:</strong> <a href="#" id="resumeLink" target="_blank">Download</a></p>
+    <p><strong>Support Request:</strong> <span id="detailSupport"></span></p>
+    <p><strong>Subscribed:</strong> <span id="detailSubscribed"></span></p>
+    <p><strong>Interview Time:</strong> <span id="detailInterviewTime">Not scheduled</span></p>
+
+    <h4>🤖 AI Filter</h4>
+    <button onclick="runAIFilter()">Run AI Filter</button>
+    <p id="aiResult"></p>
+
+    <h4>✅ Accept / ❌ Reject</h4>
+    <textarea id="decisionMessage" placeholder="Message to applicant..."></textarea>
+    <button onclick="confirmDecision('Accepted')">Accept</button>
+    <button onclick="confirmDecision('Rejected')">Reject</button>
+
+    <h4>💬 Chat</h4>
+    <div id="chatBox" style="border:1px solid #ccc; height:120px; overflow-y:auto; background:#fff;"></div>
+    <input type="text" id="chatMessage" placeholder="Type message..." />
+    <button onclick="sendChatMessage()">Send</button>
+
+    <!-- Back to Dashboard -->
+    <button onclick="closeDetails()" style="margin-top:20px; padding:8px 16px; border:none; background:#007bff; color:#fff; border-radius:4px; cursor:pointer;">
+      ← Back to Dashboard
+    </button>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    const toggle = document.getElementById("darkModeToggle");
+    if (localStorage.getItem("darkMode") === "enabled") {
+      document.body.classList.add("dark");
+      toggle.checked = true;
+    }
+    toggle.addEventListener("change", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("darkMode", toggle.checked ? "enabled" : "disabled");
+    });
+
+    function logout() {
+      localStorage.removeItem("token");
+      location.href = "login.html";
+    }
+
+    function closeDetails() {
+      document.getElementById("detailsPopup").style.display = "none";
+    }
+
+    async function loadApplications() {
+      const res  = await fetch("http://localhost:50051/api/admin/applications", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const data = await res.json();
+      window.allApps = data;
+      renderTable(data);
+      renderStats(data);
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector("#applicationsTable tbody");
+      tbody.innerHTML = "";
+      const s = document.getElementById("searchBox").value.toLowerCase();
+      const f = document.getElementById("statusFilter").value;
+      data.filter(app =>
+        (!s || app.applicant_name.toLowerCase().includes(s)) &&
+        (!f || app.status === f)
+      ).forEach(app => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${app.applicant_name || "N/A"}</td>
+          <td>${app.status || "N/A"}</td>
+          <td><button onclick="showDetails('${app.applicant_name}')">View Details</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderStats(data) {
+      document.getElementById("stats").innerHTML = `
+        <span>Total: ${data.length}</span>
+        <span>Received: ${data.filter(a => a.status === 'Received').length}</span>
+        <span>Accepted: ${data.filter(a => a.status === 'Accepted').length}</span>
+        <span>Rejected: ${data.filter(a => a.status === 'Rejected').length}</span>
+      `;
+    }
+
+    async function showDetails(name) {
+      const app = window.allApps.find(a => a.applicant_name === name);
+      if (!app) return alert("Applicant not found");
+
+      document.getElementById("detailName").textContent       = app.applicant_name;
+      document.getElementById("detailEmail").textContent      = app.email;
+      document.getElementById("detailPhone").textContent      = app.phone;
+      document.getElementById("resumeLink").href              = app.resume_filename
+        ? `http://localhost:50051/uploads/${app.resume_filename}`
+        : "#";
+      document.getElementById("detailSupport").textContent    = app.support_needs || "None";
+      document.getElementById("detailSubscribed").textContent = app.subscribe ? "Yes" : "No";
+      document.getElementById("detailInterviewTime").textContent = app.scheduledInterviewTime
+        ? new Date(app.scheduledInterviewTime).toLocaleString()
+        : "Not scheduled";
+
+      document.getElementById("aiResult").textContent = "";
+      document.getElementById("decisionMessage").value = "";
+      document.getElementById("chatMessage").value = "";
+      document.getElementById("detailsPopup").style.display = "block";
+
+      loadChat(name);
+    }
+
+    async function runAIFilter() {
+      const name = document.getElementById("detailName").textContent;
+      const res  = await fetch(`http://localhost:50051/api/admin/ai-filter/${name}`, {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const data = await res.json();
+      document.getElementById("aiResult").textContent = `${data.status} — ${data.recommendation}`;
+    }
+
+    function confirmDecision(status) {
+      if (confirm(`Are you sure to ${status}?`)) sendDecision(status);
+    }
+
+    async function sendDecision(status) {
+      const name = document.getElementById("detailName").textContent;
+      const msg  = document.getElementById("decisionMessage").value;
+      const res  = await fetch(`http://localhost:50051/api/admin/decision/${name}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ status, message: msg })
+      });
+      const data = await res.json();
+      alert(
+        `${data.message}` +
+        (data.scheduledInterviewTime
+          ? `\nInterview at: ${new Date(data.scheduledInterviewTime).toLocaleString()}`
+          : '')
+      );
+      loadApplications();
+    }
+
+    async function loadChat(name) {
+      const res  = await fetch(`http://localhost:50051/api/chat/${name}`, {
+        headers: { "Authorization": "Bearer " + token }
+      });
+      const msgs = await res.json();
+      const box  = document.getElementById("chatBox");
+      box.innerHTML = "";
+      msgs.forEach(m => {
+        const d = document.createElement("div");
+        d.textContent = `${m.sender}: ${m.text}`;
+        box.appendChild(d);
+      });
+    }
+
+    async function sendChatMessage() {
+      const name = document.getElementById("detailName").textContent;
+      const text = document.getElementById("chatMessage").value;
+      await fetch(`http://localhost:50051/api/chat/${name}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ sender: "admin", text })
+      });
+      document.getElementById("chatMessage").value = "";
+      loadChat(name);
+    }
+
+    // Filters
+    document.getElementById("searchBox").addEventListener("input", () => renderTable(window.allApps));
+    document.getElementById("statusFilter").addEventListener("change", () => renderTable(window.allApps));
+
+    // Initial load
+    loadApplications();
+  </script>
+</body>
+</html>

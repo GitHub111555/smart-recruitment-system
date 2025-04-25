@@ -1,0 +1,257 @@
+  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Recruitment System</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #0a1f34;
+      color: #f5f5f5;
+      line-height: 1.4;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+    header {
+      background-color: #0a1f34;
+      padding: 20px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    nav {
+      background-color: #0077cc;
+      padding: 10px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    nav a {
+      color: #ffffff;
+      padding: 10px;
+      margin: 0 15px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+      border-radius: 5px;
+    }
+    nav a:hover {
+      color: #ffffff;
+      background-color: #ffbc00;
+      box-shadow: 0 0 15px rgba(255, 188, 0, 0.6);
+    }
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: linear-gradient(135deg, #1c3c6b, #00aaff);
+      color: white;
+      margin-top: 30px;
+    }
+    .hero h2 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+    .hero button {
+      background-color: #000000;
+      color: white;
+      font-size: 1.1rem;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hero button:hover {
+      background-color: #ffbc00;
+      box-shadow: 0 0 15px rgba(255, 188, 0, 0.6);
+      transform: scale(1.05);
+    }
+    .job-listing {
+      padding: 30px 20px;
+      max-width: 100%;
+      margin: 0 auto;
+      text-align: center;
+      overflow: hidden;
+    }
+    .job-listing-container {
+      display: flex;
+      animation: scroll-job-listings 20s linear infinite;
+      animation-play-state: running;
+    }
+    .job-listing-container:hover {
+      animation-play-state: paused;
+    }
+    .job-card {
+      background: #1f2c42;
+      border-radius: 10px;
+      padding: 20px;
+      margin-right: 20px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      color: #fff;
+      min-width: 280px;
+    }
+    .job-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    .job-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      font-weight: bold;
+      color: #f5f5f5;
+    }
+    .job-card p {
+      font-size: 0.95rem;
+      color: #ddd;
+      margin-bottom: 15px;
+    }
+    .job-card button {
+      background-color: #00aaff;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 50px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .job-card button:hover {
+      background-color: #0077cc;
+    }
+    @keyframes scroll-job-listings {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-100%); }
+    }
+    footer {
+      background-color: #0a1f34;
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+      margin-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    footer h4 {
+      margin-bottom: 15px;
+      font-size: 1.6rem;
+      font-weight: bold;
+    }
+    footer p {
+      font-size: 0.95rem;
+      margin-bottom: 15px;
+    }
+    footer div {
+      flex: 1;
+      padding: 20px;
+      min-width: 250px;
+    }
+    footer div#about {
+      text-align: left;
+    }
+    footer div#contact {
+      text-align: right;
+    }
+    footer a {
+      color: #ffbc00;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    footer a:hover {
+      color: #f79c42;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Smart Recruitment System</h1>
+  </header>
+
+  <nav>
+    <a href="#jobs">Job Openings</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+    <div id="loginBtn" style="margin-left: auto;"></div>
+  </nav>
+
+  <div class="hero">
+    <h2>Automated Recruitment & AI-Powered Hiring</h2>
+    <p>Join the best teams with smart hiring solutions, automated interview scheduling, and AI-driven candidate filtering.</p>
+    <button onclick="location.href='status.html'">Check Your Application Status</button>
+  </div>
+
+  <section class="job-listing" id="jobs">
+    <h2 style="text-align: center; font-size: 36px; margin-bottom: 30px;">📢 Job Openings</h2>
+    <div class="job-listing-container">
+      <div class="job-card"><div class="icon">💻</div><h3>Frontend Developer</h3><p>Looking for a talented frontend developer with experience in React.js, HTML, CSS, and UI/UX design.</p><button onclick="handleApply(1)">Apply Now</button></div>
+      <div class="job-card"><div class="icon">🖥️</div><h3>Backend Engineer</h3><p>We are hiring a backend engineer with expertise in Node.js, microservices, and API development.</p><button onclick="handleApply(2)">Apply Now</button></div>
+      <div class="job-card"><div class="icon">📊</div><h3>AI Data Analyst</h3><p>Join our AI team to work on data analysis, machine learning pipelines, and predictive modeling.</p><button onclick="handleApply(3)">Apply Now</button></div>
+      <div class="job-card"><div class="icon">🔧</div><h3>Full Stack Developer</h3><p>Seeking a full stack developer proficient in both frontend and backend technologies like React.js, Node.js, and databases.</p><button onclick="handleApply(4)">Apply Now</button></div>
+      <div class="job-card"><div class="icon">🎨</div><h3>UX/UI Designer</h3><p>We need a UX/UI designer to help design user-friendly interfaces for our recruitment platform.</p><button onclick="handleApply(5)">Apply Now</button></div>
+      <div class="job-card"><div class="icon">📈</div><h3>Product Manager</h3><p>Looking for a product manager to lead teams, define product roadmaps, and oversee development stages.</p><button onclick="handleApply(6)">Apply Now</button></div>
+    </div>
+  </section>
+
+  <footer>
+    <div id="about">
+      <h4>About Us</h4>
+      <p>📄 License: This project was developed for academic purposes as part of the Distributed Systems Program at the National College of Ireland.</p>
+    </div>
+    <div id="contact">
+      <h4>Contact Us</h4>
+      <p>Student Email: x24139858@student.ncirl.ie<br>Personal Email: sinan.shuwaili@gmail.com<br>Address: Republic of Ireland, Dublin</p>
+    </div>
+  </footer>
+
+  <script>
+    function updateLoginState() {
+      const loginBtn = document.getElementById("loginBtn");
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        loginBtn.innerHTML = `<button id="logoutBtn" style="background-color: crimson; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">Logout</button>`;
+        document.getElementById("logoutBtn").onclick = () => {
+          localStorage.removeItem("token");
+          alert("You have been logged out.");
+          updateLoginState();
+        };
+      } else {
+        loginBtn.innerHTML = `<a href="login.html">Login</a>`; 
+      }
+    }
+
+    function handleApply(jobId) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        localStorage.setItem("pendingJobId", jobId);
+        location.href = "login.html";
+      } else {
+        location.href = `apply.html?jobId=${jobId}`;
+      }
+    }
+
+    updateLoginState();
+  </script>
+
+</body>
+</html>

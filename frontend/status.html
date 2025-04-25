@@ -1,0 +1,174 @@
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Check Application Status</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #000; transition: background-color .3s, color .3s; padding: 20px; }
+    body.dark { background-color: #121212; color: #fff; }
+    .dark-toggle { position: absolute; top: 20px; right: 20px; }
+    .container { max-width: 500px; margin: 100px auto 0; }
+    h2 { text-align: center; }
+    form { display: flex; flex-direction: column; margin-top: 20px; }
+    label { margin: 10px 0 5px; }
+    input { padding: 10px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
+    button { margin-top: 10px; padding: 12px; font-size: 16px; background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background-color: #0056b3; }
+    #statusResult { margin-top: 20px; white-space: pre-line; font-weight: bold; text-align: center; }
+    #goHomeBtn, #loginRedirectBtn { display: none; margin-top: 20px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+    #goHomeBtn { background-color: crimson; color: white; }
+    #loginRedirectBtn { background-color: #dc3545; color: white; }
+    #goHomeBtn:hover, #loginRedirectBtn:hover { opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <!-- Dark Mode Toggle -->
+  <div class="dark-toggle">
+    <label><input type="checkbox" id="darkModeToggle" /> Dark Mode</label>
+  </div>
+
+  <div class="container">
+    <h2>Check Your Application Status</h2>
+    <form id="statusForm">
+      <label for="applicantName">Applicant Name:</label>
+      <input type="text" id="applicantName" required />
+      <button type="submit">Check Status</button>
+      <button type="button" id="withdrawBtn">Withdraw Application</button>
+      <button type="button" id="liveStatusBtn">🔄 Live Status Updates</button>
+    </form>
+
+    <p id="statusResult"></p>
+    <button id="goHomeBtn" onclick="location.href='home.html'">⬅️ Return to Home</button>
+    <button id="loginRedirectBtn" onclick="location.href='login.html'">🔐 Login to Continue</button>
+  </div>
+
+  <script>
+    const toggle           = document.getElementById("darkModeToggle");
+    const form             = document.getElementById("statusForm");
+    const statusResult     = document.getElementById("statusResult");
+    const withdrawBtn      = document.getElementById("withdrawBtn");
+    const liveStatusBtn    = document.getElementById("liveStatusBtn");
+    const goHomeBtn        = document.getElementById("goHomeBtn");
+    const loginRedirectBtn = document.getElementById("loginRedirectBtn");
+
+    // Dark mode persistence
+    if (localStorage.getItem("darkMode") === "enabled") {
+      document.body.classList.add("dark");
+      toggle.checked = true;
+    }
+    toggle.addEventListener("change", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("darkMode", toggle.checked ? "enabled" : "disabled");
+    });
+
+    // 1) Check status
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const name  = document.getElementById("applicantName").value.trim();
+      const token = localStorage.getItem("token");
+      if (!token) {
+        statusResult.innerText = "❌ You must be logged in first.";
+        loginRedirectBtn.style.display = "inline-block";
+        return;
+      }
+      const res = await fetch("http://localhost:50051/api/check-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ applicant_name: name })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        statusResult.innerText = `❌ Error: ${data.message}`;
+        return;
+      }
+
+      // build the message
+      let text = `📄 Status for ${name}: ${data.status}`;
+
+      // if interview scheduled, format as MM/DD/YYYY HH:MM AM/PM + email reminder
+      if (data.scheduledInterviewTime) {
+        const dt = new Date(data.scheduledInterviewTime);
+        const datePart = dt.toLocaleDateString('en-US');            // MM/DD/YYYY
+        const timePart = dt.toLocaleTimeString('en-US', {          // HH:MM AM/PM
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+        text += `\n📅 Interview at: ${datePart} ${timePart}`;
+        text += `\n📧 Please check your email for the Zoom link and instructions.`;
+      }
+
+      statusResult.innerText  = text;
+      goHomeBtn.style.display = "block";
+    });
+
+    // 2) Withdraw application
+    withdrawBtn.addEventListener("click", async () => {
+      const name  = document.getElementById("applicantName").value.trim();
+      const token = localStorage.getItem("token");
+      if (!token || !name) {
+        statusResult.innerText = "❌ Please log in and enter your name.";
+        loginRedirectBtn.style.display = "inline-block";
+        return;
+      }
+      if (!confirm("Are you sure you want to withdraw your application?")) return;
+      const res = await fetch("http://localhost:50051/api/withdraw", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ applicant_name: name })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        statusResult.innerText = `❌ Error: ${data.message}`;
+      } else {
+        statusResult.innerText  = "✅ Your application has been withdrawn.";
+        goHomeBtn.style.display = "block";
+      }
+    });
+
+    // 3) Live status updates (server streaming)
+    liveStatusBtn.addEventListener("click", async () => {
+      const name  = document.getElementById("applicantName").value.trim();
+      const token = localStorage.getItem("token");
+      if (!token || !name) {
+        statusResult.innerText = "❌ Please log in and enter your name.";
+        loginRedirectBtn.style.display = "inline-block";
+        return;
+      }
+      statusResult.innerText = "⏳ Streaming updates...";
+      const res = await fetch("http://localhost:50051/api/stream-updates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ applicant_name: name })
+      });
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        chunk.split("\n").filter(Boolean).forEach(raw => {
+          try {
+            const d = JSON.parse(raw);
+            statusResult.innerText = `🟢 ${new Date().toLocaleTimeString()} - Status: ${d.status}`;
+            goHomeBtn.style.display = "block";
+          } catch (err) {
+            // ignore non-JSON lines
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
